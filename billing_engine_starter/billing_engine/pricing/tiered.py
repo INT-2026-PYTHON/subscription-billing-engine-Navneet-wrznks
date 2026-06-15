@@ -31,9 +31,7 @@ class Tier:
 
 
 class TieredPricing(PricingStrategy):
-
     def __init__(self, tiers):
-
         if len(tiers) == 0:
             raise ValueError("Tier list cannot be empty")
 
