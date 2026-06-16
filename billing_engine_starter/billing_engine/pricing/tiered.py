@@ -31,12 +31,53 @@ class Tier:
 
 
 class TieredPricing(PricingStrategy):
-    """Charges across multiple price tiers based on cumulative quantity."""
+    def __init__(self, tiers):
+        if len(tiers) == 0:
+            raise ValueError("Tier list cannot be empty")
 
-    def __init__(self, tiers: list[Tier]) -> None:
-        # TODO Day 1
-        raise NotImplementedError("Day 1: implement TieredPricing.__init__")
+        # Top tier must be open ended
+        if tiers[-1].to_units is not None:
+            raise ValueError("Top tier must be open ended")
 
-    def calculate(self, quantity: int) -> Money:
-        # TODO Day 1
-        raise NotImplementedError("Day 1: implement TieredPricing.calculate")
+        # Tiers must be contiguous
+        for i in range(len(tiers) - 1):
+            if tiers[i + 1].from_units != tiers[i].to_units:
+                raise ValueError("Tiers must be contiguous")
+
+        # Only last tier can have to_units = None
+        for i in range(len(tiers) - 1):
+            if tiers[i].to_units is None:
+                raise ValueError("Only last tier can have to_units=None")
+
+        # All tiers must use same currency
+        currency = tiers[0].unit_price.currency
+
+        for tier in tiers:
+            if tier.unit_price.currency != currency:
+                raise ValueError("All tiers must have same currency")
+
+        self.tiers = tiers
+
+    
+    def calculate(self, quantity):
+
+        if quantity < 0:
+            raise ValueError("Quantity cannot be negative")
+
+        currency = self.tiers[0].unit_price.currency
+        total = Money.zero(currency)
+
+        for tier in self.tiers:
+
+            if tier.to_units is None:
+                count = max(0, quantity - tier.from_units)
+
+            else:
+                if quantity > tier.from_units:
+                    count = min(quantity, tier.to_units) - tier.from_units
+                else:
+                    count = 0
+
+            total = total + (tier.unit_price * count)
+
+        return total
