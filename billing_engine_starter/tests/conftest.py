@@ -34,6 +34,8 @@ def db() -> Database:
     database = Database(path)
     database.init_schema()
     yield database
+    import gc
+    gc.collect()
     Path(path).unlink(missing_ok=True)
 
 
